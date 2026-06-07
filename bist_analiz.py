@@ -15,7 +15,7 @@ if added or removed:
     mode = "diff"
     added_list = [s.strip() for s in added.split(",") if s.strip()]
     removed_list = [s.strip() for s in removed.split(",") if s.strip()]
-    stocks = added_list  # sadece eklenen hisseler analiz edilir
+    stocks = added_list
 else:
     mode = "full"
     with open("stocks.txt") as f:
@@ -42,8 +42,12 @@ def analyze_stock(symbol):
     if df.empty or 'RSI' not in df.columns:
         return f"{symbol} | RSI verisi bulunamadı."
 
-    # 🔧 Kritik düzeltme: RSI tek değer olarak alınır
-    rsi = float(df['RSI'].iloc[-1])
+    # 🔧 Kritik düzeltme: RSI tek float değere dönüştürülür
+    rsi_value = df['RSI'].iloc[-1]
+    if isinstance(rsi_value, pd.Series):
+        rsi_value = rsi_value.item()
+    rsi = float(rsi_value)
+
     fiyat = float(df['Close'].iloc[-1])
     hacim = int(df['Volume'].iloc[-1])
 
