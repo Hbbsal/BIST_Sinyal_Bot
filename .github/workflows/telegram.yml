@@ -2,7 +2,7 @@ name: BIST Günlük Analiz
 
 on:
   schedule:
-    - cron: '13 20 * * 1-5'   # UTC 07:15 = Türkiye saatiyle 10:15
+    - cron: '15 7 * * 1-5'   # UTC 07:15 = Türkiye saatiyle 10:15
   push:
     paths:
       - "stocks.txt"
