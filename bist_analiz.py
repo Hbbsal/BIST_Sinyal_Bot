@@ -23,8 +23,8 @@ else:
 
 def calculate_rsi(data, period=14):
     delta = data['Close'].diff()
-    gain = delta.where(delta > 0, 0)
-    loss = -delta.where(delta < 0, 0)
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
     avg_gain = gain.rolling(period).mean()
     avg_loss = loss.rolling(period).mean()
     rs = avg_gain / avg_loss
@@ -43,7 +43,7 @@ def analyze_stock(symbol):
         return f"{symbol} | RSI verisi bulunamadı."
 
     fiyat = float(df['Close'].iloc[-1])
-    rsi = float(df['RSI'].iloc[-1])
+    rsi = float(df['RSI'].iloc[-1])  # 🔧 kritik düzeltme
     hacim = int(df['Volume'].iloc[-1])
 
     if rsi > 70:
