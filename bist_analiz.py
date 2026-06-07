@@ -31,6 +31,15 @@ def calculate_rsi(data, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
+def safe_send_message(text):
+    """Telegram mesajını güvenli şekilde gönderir (uzunluk kontrolü + hata yakalama)."""
+    try:
+        # Mesajı 4000 karakterlik parçalar halinde gönder
+        for chunk in [text[i:i+4000] for i in range(0, len(text), 4000)]:
+            bot.send_message(chat_id=CHAT_ID, text=chunk)
+    except Exception as e:
+        print(f"Telegram gönderim hatası: {e}")
+
 def analyze_stock(symbol):
     df = yf.download(symbol, period="15d", interval="15m")
     if df.empty:
@@ -55,21 +64,21 @@ def analyze_stock(symbol):
         sinyal = "📈 Yükseliş sinyali"
         hedef = fiyat * 1.15
         stop = fiyat * 0.95
-        bot.send_message(chat_id=CHAT_ID, text=f"🚨 {symbol} için ALARM: {sinyal} | Fiyat {fiyat:.2f}")
+        safe_send_message(f"🚨 {symbol} için ALARM: {sinyal} | Fiyat {fiyat:.2f}")
     elif rsi < 30:
         sinyal = "📉 Düşüş sinyali"
         hedef = fiyat * 0.85
         stop = fiyat * 1.05
-        bot.send_message(chat_id=CHAT_ID, text=f"🚨 {symbol} için ALARM: {sinyal} | Fiyat {fiyat:.2f}")
+        safe_send_message(f"🚨 {symbol} için ALARM: {sinyal} | Fiyat {fiyat:.2f}")
     else:
         sinyal = "⏸ Nötr / Bekle"
         hedef = fiyat
         stop = fiyat
 
     if fiyat >= hedef and hedef != fiyat:
-        bot.send_message(chat_id=CHAT_ID, text=f"🎯 {symbol} hedef fiyat {hedef:.2f} gerçekleşti!")
+        safe_send_message(f"🎯 {symbol} hedef fiyat {hedef:.2f} gerçekleşti!")
     if fiyat <= stop and stop != fiyat:
-        bot.send_message(chat_id=CHAT_ID, text=f"🛑 {symbol} stop-loss {stop:.2f} tetiklendi!")
+        safe_send_message(f"🛑 {symbol} stop-loss {stop:.2f} tetiklendi!")
 
     return f"{symbol} | Fiyat: {fiyat:.2f} | RSI: {rsi:.2f} | Hacim: {hacim}\n{sinyal}\n🎯 Hedef: {hedef:.2f} | 🛑 Stop: {stop:.2f}"
 
@@ -86,5 +95,5 @@ if __name__ == "__main__":
     for stock in stocks:
         report += analyze_stock(stock) + "\n\n"
 
-    bot.send_message(chat_id=CHAT_ID, text=report)
+    safe_send_message(report)
     print("✅ Rapor ve alarm mesajları Telegram'a gönderildi.")
