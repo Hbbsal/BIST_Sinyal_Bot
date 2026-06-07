@@ -15,7 +15,7 @@ if added or removed:
     mode = "diff"
     added_list = [s.strip() for s in added.split(",") if s.strip()]
     removed_list = [s.strip() for s in removed.split(",") if s.strip()]
-    stocks = added_list  # sadece eklenen hisseler için analiz yapılır
+    stocks = added_list  # sadece eklenen hisseler analiz edilir
 else:
     mode = "full"
     with open("stocks.txt") as f:
@@ -33,13 +33,18 @@ def calculate_rsi(data, period=14):
 
 def analyze_stock(symbol):
     df = yf.download(symbol, period="15d", interval="15m")
-    df['RSI'] = calculate_rsi(df)
+    if df.empty:
+        return f"{symbol} | Veri bulunamadı."
 
-    # Son satırdan tek değerleri al
-    last_row = df.iloc[-1]
-    fiyat = float(last_row['Close'])
-    rsi = float(last_row['RSI'])
-    hacim = int(last_row['Volume'])
+    df['RSI'] = calculate_rsi(df)
+    df.dropna(inplace=True)
+
+    if df.empty or 'RSI' not in df.columns:
+        return f"{symbol} | RSI verisi bulunamadı."
+
+    fiyat = float(df['Close'].iloc[-1])
+    rsi = float(df['RSI'].iloc[-1])
+    hacim = int(df['Volume'].iloc[-1])
 
     if rsi > 70:
         sinyal = "📈 Yükseliş sinyali"
