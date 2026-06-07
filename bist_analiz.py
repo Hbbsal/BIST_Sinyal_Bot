@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from telegram import Bot
 import os
+from PIL import Image
 
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -42,7 +43,7 @@ def analyze_stock(symbol):
     if df.empty or 'RSI' not in df.columns:
         return f"{symbol} | RSI verisi bulunamadı."
 
-    # 🔧 Kritik düzeltme: RSI tek float değere dönüştürülür
+    # 🔧 RSI tek float değere dönüştürülür
     rsi_value = df['RSI'].iloc[-1]
     if isinstance(rsi_value, pd.Series):
         rsi_value = rsi_value.item()
