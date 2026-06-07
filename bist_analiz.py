@@ -6,21 +6,27 @@ import os
 
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
 bot = Bot(token=TOKEN)
 
-# Hisseleri dış dosyadan oku
-with open("stocks.txt") as f:
-    stocks = [line.strip() for line in f if line.strip()]
+added = os.getenv("ADDED", "").strip()
+removed = os.getenv("REMOVED", "").strip()
+
+if added or removed:
+    mode = "diff"
+    added_list = [s.strip() for s in added.split(",") if s.strip()]
+    removed_list = [s.strip() for s in removed.split(",") if s.strip()]
+    stocks = added_list  # sadece eklenen hisseler için analiz yapılır
+else:
+    mode = "full"
+    with open("stocks.txt") as f:
+        stocks = [line.strip() for line in f if line.strip()]
 
 def calculate_rsi(data, period=14):
     delta = data['Close'].diff()
     gain = delta.where(delta > 0, 0)
     loss = -delta.where(delta < 0, 0)
-
     avg_gain = gain.rolling(period).mean()
     avg_loss = loss.rolling(period).mean()
-
     rs = avg_gain / avg_loss
     rsi = 100 - (100 / (1 + rs))
     return rsi
@@ -57,9 +63,17 @@ def analyze_stock(symbol):
     return f"{symbol} | Fiyat: {fiyat:.2f} | RSI: {rsi:.2f} | Hacim: {hacim}\n{sinyal}\n🎯 Hedef: {hedef:.2f} | 🛑 Stop: {stop:.2f}"
 
 if __name__ == "__main__":
-    report = f"📊 Günlük BIST Analizi ({datetime.now().strftime('%Y-%m-%d %H:%M')})\n\n"
+    if mode == "diff":
+        report = f"📌 Değişen Hisseler ({datetime.now().strftime('%Y-%m-%d %H:%M')})\n\n"
+        if added_list:
+            report += "➕ Eklenen:\n" + "\n".join(added_list) + "\n\n"
+        if removed_list:
+            report += "➖ Çıkarılan:\n" + "\n".join(removed_list) + "\n\n"
+    else:
+        report = f"📊 Günlük BIST Analizi ({datetime.now().strftime('%Y-%m-%d %H:%M')})\n\n"
+
     for stock in stocks:
         report += analyze_stock(stock) + "\n\n"
 
     bot.send_message(chat_id=CHAT_ID, text=report)
-    print("✅ Günlük rapor ve alarm mesajları Telegram'a gönderildi.")
+    print("✅ Rapor ve alarm mesajları Telegram'a gönderildi.")
