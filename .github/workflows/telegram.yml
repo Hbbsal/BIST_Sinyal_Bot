@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Önceki stocks.txt dosyasını al
+        continue-on-error: true
         run: |
           git fetch origin main --depth=2
           git checkout HEAD^1 -- stocks.txt || echo "" > old_stocks.txt
@@ -46,3 +47,17 @@ jobs:
           ADDED: ${{ env.ADDED }}
           REMOVED: ${{ env.REMOVED }}
         run: python bist_analiz.py
+
+      - name: Başarılı Çalışma Bildirimi
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python - <<EOF
+          from telegram import Bot
+          import os
+          token = os.getenv("TELEGRAM_TOKEN")
+          chat_id = os.getenv("TELEGRAM_CHAT_ID")
+          bot = Bot(token=token)
+          bot.send_message(chat_id=chat_id, text="✅ Workflow başarıyla çalıştı: Güncel hisselerden rapor gönderildi!")
+          EOF
