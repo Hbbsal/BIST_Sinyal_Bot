@@ -32,9 +32,7 @@ def calculate_rsi(data, period=14):
     return rsi
 
 def safe_send_message(text):
-    """Telegram mesajını güvenli şekilde gönderir (uzunluk kontrolü + hata yakalama)."""
     try:
-        # Mesajı 4000 karakterlik parçalar halinde gönder
         for chunk in [text[i:i+4000] for i in range(0, len(text), 4000)]:
             bot.send_message(chat_id=CHAT_ID, text=chunk)
     except Exception as e:
@@ -53,9 +51,7 @@ def analyze_stock(symbol):
 
     # 🔧 RSI tek float değere dönüştürülür
     rsi_value = df['RSI'].iloc[-1]
-    if isinstance(rsi_value, pd.Series):
-        rsi_value = rsi_value.item()
-    rsi = float(rsi_value)
+    rsi = float(pd.Series(rsi_value).squeeze())
 
     fiyat = float(df['Close'].iloc[-1])
     hacim = int(df['Volume'].iloc[-1])
