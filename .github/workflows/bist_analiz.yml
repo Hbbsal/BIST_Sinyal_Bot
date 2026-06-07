@@ -13,11 +13,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 🚀 Node.js 24 uyumluluğu için en güncel v4 sürümü
       - name: Repo'yu çek
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # Git geçmişini en az 2 commit derinliğinde çekiyoruz
+          fetch-depth: 2 # Git geçmişini karşılaştırabilmek için 2 commit derinliğinde çekiyoruz
 
+      # 🔧 Git geçmişi olmasa bile exit code 1 vermeyen güvenli adım
       - name: Önceki stocks.txt dosyasını al
         run: |
           # Mevcut stocks.txt dosyasını yeni dosya olarak ayırıyoruz
@@ -42,6 +44,7 @@ jobs:
           echo "ADDED=$(cat added.txt | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_ENV
           echo "REMOVED=$(cat removed.txt | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_ENV
 
+      # 🚀 Node.js 24 uyumluluğu için en güncel v5 sürümü
       - name: Python kur
         uses: actions/setup-python@v5
         with:
@@ -61,6 +64,7 @@ jobs:
         run: |
           python bist_analiz.py
 
+      # 🔧 python-telegram-bot v20+ uyumlu asenkron (async) bildirim adımı
       - name: Başarılı Çalışma Bildirimi
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -69,8 +73,13 @@ jobs:
           python - <<EOF
           from telegram import Bot
           import os
-          token = os.getenv("TELEGRAM_TOKEN")
-          chat_id = os.getenv("TELEGRAM_CHAT_ID")
-          bot = Bot(token=token)
-          bot.send_message(chat_id=chat_id, text="✅ Workflow başarıyla çalıştı: Güncel hisselerden rapor gönderildi!")
+          import asyncio
+          
+          async def send():
+              token = os.getenv("TELEGRAM_TOKEN")
+              chat_id = os.getenv("TELEGRAM_CHAT_ID")
+              bot = Bot(token=token)
+              await bot.send_message(chat_id=chat_id, text="✅ Workflow başarıyla çalıştı: Güncel hisselerden rapor gönderildi!")
+          
+          asyncio.run(send())
           EOF
