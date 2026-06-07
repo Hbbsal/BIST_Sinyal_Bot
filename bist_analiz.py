@@ -34,11 +34,12 @@ def calculate_rsi(data, period=14):
 def analyze_stock(symbol):
     df = yf.download(symbol, period="15d", interval="15m")
     df['RSI'] = calculate_rsi(df)
-    last_row = df.iloc[-1]
 
-    fiyat = last_row['Close']
-    rsi = last_row['RSI']
-    hacim = last_row['Volume']
+    # Son satırdan tek değerleri al
+    last_row = df.iloc[-1]
+    fiyat = float(last_row['Close'])
+    rsi = float(last_row['RSI'])
+    hacim = int(last_row['Volume'])
 
     if rsi > 70:
         sinyal = "📈 Yükseliş sinyali"
