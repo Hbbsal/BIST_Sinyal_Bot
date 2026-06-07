@@ -39,13 +39,11 @@ def safe_send_message(text):
         print(f"Telegram gönderim hatası: {e}")
 
 def analyze_stock(symbol):
-    # Veriyi indiriyoruz
     df = yf.download(symbol, period="15d", interval="15m")
     if df.empty:
         return f"{symbol} | Veri bulunamadı."
 
-    # yfinance bazen sütunları MultiIndex (Symbol, Price) olarak döndürür. 
-    # Bunu düz standart sütun isimlerine indirgiyoruz.
+    # yfinance MultiIndex yapısı döndürürse sütunları düzleştiriyoruz
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
 
@@ -55,10 +53,10 @@ def analyze_stock(symbol):
     if df.empty or 'RSI' not in df.columns:
         return f"{symbol} | RSI verisi bulunamadı."
 
-    # 🔧 ValueError hatasını çözen kısım: Son satırdaki değerleri güvenle float/int yapıyoruz.
-    rsi = float(df['RSI'].iloc[-1])
-    fiyat = float(df['Close'].iloc[-1])
-    hacim = int(df['Volume'].iloc[-1])
+    # 🔥 KESİN ÇÖZÜM: Verileri numpy array'e çevirip son elemanı saf sayı (scalar) olarak alıyoruz
+    rsi = float(df['RSI'].to_numpy()[-1])
+    fiyat = float(df['Close'].to_numpy()[-1])
+    hacim = int(df['Volume'].to_numpy()[-1])
 
     if rsi > 70:
         sinyal = "📈 Yükseliş sinyali"
