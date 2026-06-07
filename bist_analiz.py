@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import datetime
 from telegram import Bot
 import os
-from PIL import Image
 
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
