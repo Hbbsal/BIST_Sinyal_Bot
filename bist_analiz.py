@@ -42,8 +42,9 @@ def analyze_stock(symbol):
     if df.empty or 'RSI' not in df.columns:
         return f"{symbol} | RSI verisi bulunamadı."
 
+    # 🔧 Kritik düzeltme: RSI tek değer olarak alınır
+    rsi = float(df['RSI'].iloc[-1])
     fiyat = float(df['Close'].iloc[-1])
-    rsi = float(df['RSI'].iloc[-1])  # 🔧 kritik düzeltme
     hacim = int(df['Volume'].iloc[-1])
 
     if rsi > 70:
