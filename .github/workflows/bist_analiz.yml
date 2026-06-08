@@ -1,85 +1,31 @@
-name: BIST Günlük Analiz
+name: BIST Stratos Analiz
 
 on:
   schedule:
-    - cron: '15 7 * * 1-5'   # UTC 07:15 = TSİ 10:15
-  push:
-    paths:
-      - "stocks.txt"
-  workflow_dispatch:
+    - cron: '15 7 * * 1-5'   # Her hafta içi sabah 10:15 Türkiye saati
+  workflow_dispatch:          # Manuel çalıştırma için
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
 
     steps:
-      # 🚀 Node.js 24 uyumluluğu için en güncel v4 sürümü
       - name: Repo'yu çek
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2 # Git geçmişini karşılaştırabilmek için 2 commit derinliğinde çekiyoruz
+        uses: actions/checkout@v3
 
-      # 🔧 Git geçmişi olmasa bile exit code 1 vermeyen güvenli adım
-      - name: Önceki stocks.txt dosyasını al
-        run: |
-          # Mevcut stocks.txt dosyasını yeni dosya olarak ayırıyoruz
-          cp stocks.txt new_stocks.txt
-          
-          # Bir önceki commit'teki stocks.txt dosyasını almayı deniyoruz. 
-          # Eğer hata alırsa (ilk commit ise veya bulunamazsa) boş bir old_stocks.txt oluşturur.
-          if git checkout HEAD^1 -- stocks.txt 2>/dev/null; then
-            mv stocks.txt old_stocks.txt
-          else
-            echo "" > old_stocks.txt
-          fi
-          
-          # Çalışma dizinini temizlemek için git durumunu sıfırlıyoruz
-          git reset HEAD stocks.txt 2>/dev/null || true
-          git checkout -- stocks.txt 2>/dev/null || true
-
-      - name: Farklı hisseleri bul
-        run: |
-          comm -23 <(sort old_stocks.txt) <(sort new_stocks.txt) > removed.txt
-          comm -13 <(sort old_stocks.txt) <(sort new_stocks.txt) > added.txt
-          echo "ADDED=$(cat added.txt | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_ENV
-          echo "REMOVED=$(cat removed.txt | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_ENV
-
-      # 🚀 Node.js 24 uyumluluğu için en güncel v5 sürümü
       - name: Python kur
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
       - name: Bağımlılıkları yükle
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance pandas python-telegram-bot pillow
+          pip install yfinance pandas ta python-telegram-bot
 
-      - name: Botu çalıştır (değişen hisseler)
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          ADDED: ${{ env.ADDED }}
-          REMOVED: ${{ env.REMOVED }}
-        run: |
-          python bist_analiz.py
-
-      # 🔧 python-telegram-bot v20+ uyumlu asenkron (async) bildirim adımı
-      - name: Başarılı Çalışma Bildirimi
+      - name: Stratos Analiz Botu
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          python - <<EOF
-          from telegram import Bot
-          import os
-          import asyncio
-          
-          async def send():
-              token = os.getenv("TELEGRAM_TOKEN")
-              chat_id = os.getenv("TELEGRAM_CHAT_ID")
-              bot = Bot(token=token)
-              await bot.send_message(chat_id=chat_id, text="✅ Workflow başarıyla çalıştı: Güncel hisselerden rapor gönderildi!")
-          
-          asyncio.run(send())
-          EOF
+          python bist_analiz.py || echo "Analiz sırasında hata oluştu ama işlem devam ediyor."
