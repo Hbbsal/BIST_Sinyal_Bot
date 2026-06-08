@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 
-# 🔥 KESİN ÇÖZÜM: 'ta' veya 'pandas-ta' kütüphanesi eksikse Python kodun içinde otomatik yüklüyoruz
+# 🚀 KESİN ÇÖZÜM: 'ta' kütüphanesi eksikse, hangi .yml çalışırsa çalışsın kod çökmek yerine kendisi yükler
 try:
     import ta
     HAS_TA = True
@@ -11,7 +11,7 @@ except ImportError:
         import pandas_ta as ta
         HAS_TA = False
     except ImportError:
-        print("▶ 'ta' kütüphanesi bulunamadı, arka planda yükleniyor...")
+        print("▶ 'ta' kütüphanesi bulunamadı, sistem otomatik yüklüyor...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "ta", "pandas-ta", "yfinance", "pandas", "python-telegram-bot"])
         import ta
         HAS_TA = True
@@ -93,7 +93,7 @@ Sinyal: {sinyal}
 """
 
 def load_stocks():
-    # Kodun hangi isimde txt dosyası bulursa onu okuması için esneklik getirdik
+    # Dosya ismi ne olursa olsun esnek okuma yapısı
     possible_files = ["stocks.txt", "new_stocks.txt", "old_stocks.txt"]
     for file in possible_files:
         if os.path.exists(file):
@@ -101,7 +101,7 @@ def load_stocks():
                 lines = [line.strip() for line in f if line.strip()]
                 if lines:
                     return lines
-    return ["THYAO", "EREGL"] # Yedek liste
+    return ["THYAO", "EREGL"]
 
 async def main():
     hisseler = load_stocks()
