@@ -3,26 +3,33 @@ name: BIST Stratos Analiz
 on:
   schedule:
     - cron: '15 7 * * 1-5'   # Her hafta içi sabah 10:15 Türkiye saati
-  workflow_dispatch:          # Manuel çalıştırma için
+  push:
+    paths:
+      - "stocks.txt"
+  workflow_dispatch:          # Manuel tetikleme butonu
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
 
     steps:
+      # Node.js 24 destekli güncel aksiyon
       - name: Repo'yu çek
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      # Python 3.10 kurulumu
       - name: Python kur
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
+      # Gerekli olan tüm kütüphanelerin eksiksiz kurulumu
       - name: Bağımlılıkları yükle
         run: |
           python -m pip install --upgrade pip
           pip install yfinance pandas ta pandas-ta python-telegram-bot
 
+      # Botu çalıştır adımı
       - name: Stratos Analiz Botu
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
