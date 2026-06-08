@@ -1,10 +1,8 @@
 import os
-import yfinance as yf
-import pandas as pd
-from telegram import Bot
-import asyncio
+import subprocess
+import sys
 
-# Esnek kütüphane kontrolü
+# 🔥 KESİN ÇÖZÜM: 'ta' veya 'pandas-ta' kütüphanesi eksikse Python kodun içinde otomatik yüklüyoruz
 try:
     import ta
     HAS_TA = True
@@ -13,13 +11,18 @@ except ImportError:
         import pandas_ta as ta
         HAS_TA = False
     except ImportError:
-        raise ImportError("Lütfen 'ta' veya 'pandas-ta' kütüphanesini yükleyin.")
+        print("▶ 'ta' kütüphanesi bulunamadı, arka planda yükleniyor...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "ta", "pandas-ta", "yfinance", "pandas", "python-telegram-bot"])
+        import ta
+        HAS_TA = True
+
+import yfinance as yf
+import pandas as pd
+from telegram import Bot
+import asyncio
 
 def calculate_indicators(data):
-    """Teknik göstergeleri güvenli bir şekilde hesaplar"""
     close_series = data["Close"]
-    
-    # Eğer yfinance sütunları MultiIndex (başlıklı) getirdiyse düzleştiriyoruz
     if isinstance(close_series, pd.DataFrame):
         close_series = close_series.iloc[:, 0]
         
@@ -35,21 +38,17 @@ def calculate_indicators(data):
     return ema20, ema50, rsi
 
 def bist_stratos_analiz(hisse):
-    # Veriyi çekiyoruz (.IS uzantısı dinamik eklenir)
     symbol = f"{hisse}.IS" if not hisse.endswith(".IS") else hisse
     data = yf.download(symbol, period="6mo", interval="1d")
     
     if data.empty:
         return f"⚠️ {hisse} | Veri bulunamadı."
 
-    # yfinance MultiIndex yapısını düzleştirme koruması
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = data.columns.get_level_values(0)
 
-    # Göstergeleri hesapla
     ema20_series, ema50_series, rsi_series = calculate_indicators(data)
     
-    # 🔥 KESİN ÇÖZÜM: Değerleri Numpy array üzerinden saf float tiplerine dönüştürüyoruz
     fiyat = float(data["Close"].to_numpy()[-1])
     ema20 = float(ema20_series.to_numpy()[-1])
     ema50 = float(ema50_series.to_numpy()[-1])
@@ -58,7 +57,6 @@ def bist_stratos_analiz(hisse):
     trend = "Yükseliş" if ema20 > ema50 else "Düşüş"
     risk = "Yüksek (Aşırı Alım)" if rsi > 70 else "Yüksek (Aşırı Satım)" if rsi < 30 else "Orta"
 
-    # Mantıksal Bölgesel Seviyeler (RSI ve Trend Kombinasyonlu Dinamik Sinyal)
     if rsi < 30 and trend == "Yükseliş":
         durum, sinyal = "Alım Eşiği – Güçlü Yükseliş Potansiyeli", "AL"
     elif rsi < 35:
@@ -94,13 +92,16 @@ Sinyal: {sinyal}
 🎯 3. Hedef: {hedef3:.2f} ₺
 """
 
-def load_stocks(file_path="stocks.txt"):
-    if not os.path.exists(file_path):
-        # Eğer dosya yoksa örnek oluştur
-        with open(file_path, "w") as f:
-            f.write("THYAO\nEREGL\n")
-    with open(file_path, "r") as f:
-        return [line.strip() for line in f if line.strip()]
+def load_stocks():
+    # Kodun hangi isimde txt dosyası bulursa onu okuması için esneklik getirdik
+    possible_files = ["stocks.txt", "new_stocks.txt", "old_stocks.txt"]
+    for file in possible_files:
+        if os.path.exists(file):
+            with open(file, "r") as f:
+                lines = [line.strip() for line in f if line.strip()]
+                if lines:
+                    return lines
+    return ["THYAO", "EREGL"] # Yedek liste
 
 async def main():
     hisseler = load_stocks()
@@ -111,7 +112,6 @@ async def main():
     for hisse in hisseler:
         try:
             rapor = bist_stratos_analiz(hisse)
-            # 🔧 v20+ kütüphane uyumluluğu için asenkron gönderim
             await bot.send_message(chat_id=chat_id, text=rapor)
         except Exception as e:
             try:
