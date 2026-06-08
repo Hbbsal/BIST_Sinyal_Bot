@@ -7,6 +7,7 @@ def bist_stratos_analiz(hisse):
     data = yf.download(f"{hisse}.IS", period="6mo", interval="1d")
     fiyat = data["Close"].iloc[-1]
 
+    # Teknik göstergeler
     data["EMA20"] = ta.trend.EMAIndicator(data["Close"], window=20).ema_indicator()
     data["EMA50"] = ta.trend.EMAIndicator(data["Close"], window=50).ema_indicator()
     data["RSI"] = ta.momentum.RSIIndicator(data["Close"], window=14).rsi()
@@ -18,6 +19,7 @@ def bist_stratos_analiz(hisse):
     trend = "Yükseliş" if ema20 > ema50 else "Düşüş"
     risk = "Yüksek (Aşırı Alım)" if rsi > 70 else "Yüksek (Aşırı Satım)" if rsi < 30 else "Orta"
 
+    # Bölgesel seviyeler
     al_esik = fiyat * 0.95
     risk_bolgesi = fiyat * 0.90
     panik_bolgesi = fiyat * 0.85
@@ -70,8 +72,11 @@ def main():
     bot = Bot(token=token)
 
     for hisse in hisseler:
-        rapor = bist_stratos_analiz(hisse)
-        bot.send_message(chat_id=chat_id, text=rapor)
+        try:
+            rapor = bist_stratos_analiz(hisse)
+            bot.send_message(chat_id=chat_id, text=rapor)
+        except Exception as e:
+            bot.send_message(chat_id=chat_id, text=f"⚠️ {hisse} için analiz hatası: {e}")
 
 if __name__ == "__main__":
     main()
