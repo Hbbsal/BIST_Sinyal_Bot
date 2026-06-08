@@ -65,13 +65,13 @@ def load_stocks(file_path="stocks.txt"):
 
 def main():
     hisseler = load_stocks()
-    raporlar = [bist_stratos_analiz(hisse) for hisse in hisseler]
-    rapor = "\n\n".join(raporlar)
-
     token = os.getenv("TELEGRAM_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
     bot = Bot(token=token)
-    bot.send_message(chat_id=chat_id, text=rapor)
+
+    for hisse in hisseler:
+        rapor = bist_stratos_analiz(hisse)
+        bot.send_message(chat_id=chat_id, text=rapor)
 
 if __name__ == "__main__":
     main()
