@@ -1,16 +1,27 @@
 import os
 import yfinance as yf
-import ta
 from telegram import Bot
+
+# Esnek import: önce ta, yoksa pandas-ta
+try:
+    import ta
+except ImportError:
+    import pandas_ta as ta
 
 def bist_stratos_analiz(hisse):
     data = yf.download(f"{hisse}.IS", period="6mo", interval="1d")
     fiyat = data["Close"].iloc[-1]
 
     # Teknik göstergeler
-    data["EMA20"] = ta.trend.EMAIndicator(data["Close"], window=20).ema_indicator()
-    data["EMA50"] = ta.trend.EMAIndicator(data["Close"], window=50).ema_indicator()
-    data["RSI"] = ta.momentum.RSIIndicator(data["Close"], window=14).rsi()
+    try:
+        data["EMA20"] = ta.trend.EMAIndicator(data["Close"], window=20).ema_indicator()
+        data["EMA50"] = ta.trend.EMAIndicator(data["Close"], window=50).ema_indicator()
+        data["RSI"] = ta.momentum.RSIIndicator(data["Close"], window=14).rsi()
+    except AttributeError:
+        # pandas-ta kullanılıyorsa
+        data["EMA20"] = ta.ema(data["Close"], length=20)
+        data["EMA50"] = ta.ema(data["Close"], length=50)
+        data["RSI"] = ta.rsi(data["Close"], length=14)
 
     ema20 = data["EMA20"].iloc[-1]
     ema50 = data["EMA50"].iloc[-1]
