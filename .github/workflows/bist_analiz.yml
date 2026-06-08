@@ -13,23 +13,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Node.js 24 destekli en güncel aksiyon
       - name: Repo'yu çek
         uses: actions/checkout@v4
 
-      # Python 3.10 kurulumu
       - name: Python kur
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # Hatanın çözüldüğü kritik adım: Tüm kütüphaneler (ta dahil) eksiksiz yükleniyor
+      # Sorunun çözüldüğü adım: Hata veren pandas-ta listeden çıkarıldı, yfinance stabilize edildi
       - name: Bağımlılıkları yükle
         run: |
           python -m pip install --upgrade pip
-          pip install yfinance pandas ta pandas-ta python-telegram-bot
+          pip install --upgrade yfinance pandas python-telegram-bot
+          pip install ta
 
-      # Stratos Botunu çalıştır
       - name: Stratos Analiz Botu
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
